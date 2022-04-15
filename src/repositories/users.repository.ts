@@ -1,4 +1,4 @@
-import { sequelize, User } from "../models";
+import { User } from "../models";
 
 export interface IUserRepository {
   getById(id: string): Promise<User | null>;
@@ -8,7 +8,6 @@ export interface IUserRepository {
   saveUser(user: User): Promise<User>;
 
   emailExists(email: string): Promise<boolean>;
-
 }
 
 export class UserRepository implements IUserRepository {
@@ -43,12 +42,6 @@ export class UserRepository implements IUserRepository {
       where: {
         email: email,
       },
-      include: [
-        {
-          model: sequelize.models.EmailVerification,
-          as: 'emailVerification',
-        },
-      ],
     });
     if (!user || user.deletedAt != null) {
       return null;

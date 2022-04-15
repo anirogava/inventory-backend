@@ -9,8 +9,9 @@ module.exports = {
         price: faker.datatype.number(),
         name: faker.random.words(2),
         address: faker.random.arrayElement(["ccm", "cav", "cep", "cag"]),
-        created_at: new Date(),
-        updated_at: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
       });
     }
     await queryInterface.bulkInsert("inventory", inventory, {});

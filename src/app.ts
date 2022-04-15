@@ -11,13 +11,13 @@ import passport from "passport";
 import { configurePassport } from "./passport";
 import { hashSync } from "bcrypt";
 import { Inventory } from "./models/Inventory";
+import { InventoryRepository } from "./repositories/inventorys.repository";
+import { Model } from "sequelize/types";
 
 const SequelizeStore = storeInit(session.Store);
 Inventory.initializeModel(sequelize);
 
 const app = express();
-
-const secretKey = "MySecretKey";
 
 const storeOptions = {
   db: sequelize,
@@ -57,54 +57,63 @@ app.use(passport.session());
 
 configurePassport(passport);
 
-app.get("/user", (req, res) => {
+const api = Router();
+
+api.get("/user", (req, res) => {
+  console.log(req.user);
+
   res.send(req.user);
 });
 
-app.post("/login", (req, res, next) => {
-  User.findOne();
-  passport.authenticate("local", function (err, user) {
-    // if (!user) {
-    //   return res.redirect("/protected");
-    // }
-    // res.redirect("/protected");
-    res.send({ success: true });
-  })(req, res, next);
+api.post("/login", passport.authenticate("local"), (req, res, next) => {
+  console.log(req.user);
+
+  res.send({ message: "ok" });
 });
-app.post("/register", (req, res) => {
-  const user = new User({
-    firstName: req.body.firstName,
-    lastName: req.body.lastName,
-    email: req.body.email,
-    id: req.body.id,
-    password: hashSync(req.body.password, 10),
-    isActive: req.body.isActive,
-  });
-  user.save().then((user) => console.log(user));
+api.post("/register", async (req, res) => {
+  console.log(req.body);
+
+  try {
+    const user = await User.create({
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      email: req.body.email,
+      password: hashSync(req.body.password, 10),
+      isActive: true,
+    });
+  } catch (er: any) {
+    console.log(er);
+  }
+
+  // console.log(user);
+
   res.send({ success: true });
 });
-app.get("/logout", (req, res) => {
+api.get("/logout", (req, res) => {
   req.logout();
   res.redirect("./login");
 });
-// app.get("/protected", (req, res) => {
-//   // if (req.isAuthenticated()) {
-//   //   res.send("protected");
-//   // } else {
-//   //   res.status(401).send({ msg: "Unauthorized" });
-//   // }
-//   res.send("protected");
-// });
+api.get("/protected", (req, res) => {
+  if (req.isAuthenticated()) {
+    res.send("protected");
+  } else {
+    res.status(401).send({ msg: "Unauthorized" });
+  }
+  res.send("protected");
+});
 
 // inventory
 
-app.get("/list", async (req, res) => {
-  const list = await Inventory.findAll();
-  res.send(list).status(200);
+api.get("/list", async (req, res) => {
+  const items = await new InventoryRepository().getList(
+    parseInt(<string>req.query.offset),
+    parseInt(<string>req.query.limit)
+  );
+  const count = await Inventory.count();
+  res.send({ count, items }).status(200);
 });
-app.post("/list", (req, res) => {
-  console.log(req.body);
 
+api.post("/list", (req, res) => {
   let inventory = new Inventory({
     name: req.body.name,
     price: req.body.price,
@@ -113,7 +122,7 @@ app.post("/list", (req, res) => {
   inventory.save().then((inventory) => console.log(inventory));
   res.send({ success: true });
 });
-app.delete("/list/:id", async (req, res) => {
+api.delete("/list/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const deleteInventory = await Inventory.destroy({
@@ -126,5 +135,7 @@ app.delete("/list/:id", async (req, res) => {
     console.error(err);
   }
 });
+
+app.use("/api", api);
 
 export default app;

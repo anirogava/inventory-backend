@@ -1,17 +1,15 @@
-import { DataTypes, Model, Sequelize } from "sequelize";
+import { DataTypes, Model, Optional, Sequelize } from "sequelize";
 
 export interface InventoryAttributes {
   id: number;
   name: string;
   price: number;
   address: string;
+  userId: string | null;
 }
 
-export interface InventoryCreationAttributes {
-  name: string;
-  price: number;
-  address: string;
-}
+export interface InventoryCreationAttributes
+  extends Optional<InventoryAttributes, "id"> {}
 
 export class Inventory extends Model<
   InventoryAttributes,
@@ -21,6 +19,7 @@ export class Inventory extends Model<
   public name!: string;
   public price!: number;
   public address!: string;
+  public userId!: string | null;
 
   public static initializeModel(sequelize: Sequelize) {
     Inventory.init(
@@ -30,6 +29,10 @@ export class Inventory extends Model<
           autoIncrement: true,
           primaryKey: true,
           type: DataTypes.INTEGER,
+        },
+        userId: {
+          type: DataTypes.STRING,
+          allowNull: true,
         },
         name: {
           type: DataTypes.STRING,

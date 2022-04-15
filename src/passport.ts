@@ -1,8 +1,11 @@
-import passport from 'passport';
-import { Strategy as LocalStrategy } from 'passport-local';
-import { ApiError } from './errors/api-error';
-import { IRedisService, RedisService } from './services/redis.client';
-import { IUserRepository, UserRepository } from "./repositories/users.repository";
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import { ApiError } from "./errors/api-error";
+import { IRedisService, RedisService } from "./services/redis.client";
+import {
+  IUserRepository,
+  UserRepository,
+} from "./repositories/users.repository";
 import { User } from "./models";
 
 const UNSUCCESSFUL_LOGIN_LIMIT = 5;
@@ -27,57 +30,29 @@ export function configurePassport(
       .catch(done);
   });
 
-  // =========================================================================
-  // JWT AUTH ================================================================
-  // =========================================================================
-
-  // const options = {
-  //     jwtFromRequest: ExtractJwt.fromExtractors([
-  //         ExtractJwt.fromAuthHeaderAsBearerToken(),
-  //         ExtractJwt.fromHeader('a-t'),
-  //     ]),
-  //     secretOrKey: process.env.JWT_SECRET,
-  //     algorithms: ['HS256'],
-  // };
-
-  // passport.use(new JwtStrategy(options, function (payload, done) {
-  //     userRepository.getById(payload.user.id)
-  //         .then((user) => {
-  //             if (!user) return done(null, false);
-
-  //             done(null, user);
-  //         })
-  //         .catch(done);
-  // }));
-
-  // ====================================================================
-  // LOCAL STRATEGY
-  // ====================================================================
-
   passport.use(
     new LocalStrategy(
       {
-        usernameField: 'email',
-        passwordField: 'password',
+        usernameField: "email",
+        passwordField: "password",
         passReqToCallback: true,
       },
       function (req, email, password, done) {
         userRepository
-          .getUserByEmail(email.toLowerCase().replace(/\s/g, ''))
+          .getUserByEmail(email.toLowerCase().replace(/\s/g, ""))
           .then(async (user) => {
             if (!user)
               return done(
-                new ApiError('incorrect email or password', 400),
+                new ApiError("incorrect email or password", 400),
                 false
               );
-            let unsuccessfulLoginCount = await redisService.getUnsuccessfulLoginCount(
-              user.id
-            );
+            let unsuccessfulLoginCount =
+              await redisService.getUnsuccessfulLoginCount(user.id);
 
             if (loginIsDisabled(unsuccessfulLoginCount)) {
               return done(
                 new ApiError(
-                  'the maximum number of login attempts has been exceeded',
+                  "the maximum number of login attempts has been exceeded",
                   429
                 ),
                 false
@@ -93,7 +68,7 @@ export function configurePassport(
                   loginIsDisabled(unsuccessfulLoginCount)
                 );
                 return done(
-                  new ApiError('incorrect email or password', 400),
+                  new ApiError("incorrect email or password", 400),
                   false
                 );
               }
