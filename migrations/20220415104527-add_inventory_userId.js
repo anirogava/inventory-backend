@@ -7,10 +7,10 @@ module.exports = {
       allowNull: true,
     });
   },
-
   async down(queryInterface, Sequelize) {
     queryInterface.removeColumn("inventoy", "userId", {
-      /* query options */
+      type: Sequelize.STRING,
+      allowNull: true,
     });
   },
 };

@@ -12,7 +12,7 @@ import { configurePassport } from "./passport";
 import { hashSync } from "bcrypt";
 import { Inventory } from "./models/Inventory";
 import { InventoryRepository } from "./repositories/inventorys.repository";
-import { Model } from "sequelize/types";
+import { DailyRotateFileTransportOptions } from "winston/lib/winston/transports";
 
 const SequelizeStore = storeInit(session.Store);
 Inventory.initializeModel(sequelize);
@@ -60,19 +60,13 @@ configurePassport(passport);
 const api = Router();
 
 api.get("/user", (req, res) => {
-  console.log(req.user);
-
   res.send(req.user);
 });
 
 api.post("/login", passport.authenticate("local"), (req, res, next) => {
-  console.log(req.user);
-
   res.send({ message: "ok" });
 });
 api.post("/register", async (req, res) => {
-  console.log(req.body);
-
   try {
     const user = await User.create({
       firstName: req.body.firstName,
@@ -107,8 +101,11 @@ api.get("/protected", (req, res) => {
 api.get("/list", async (req, res) => {
   const items = await new InventoryRepository().getList(
     parseInt(<string>req.query.offset),
-    parseInt(<string>req.query.limit)
+    parseInt(<string>req.query.limit),
+    <{}>JSON.parse(<string>req.query.filters)
   );
+  console.log(req.query.filters);
+
   const count = await Inventory.count();
   res.send({ count, items }).status(200);
 });
@@ -118,6 +115,7 @@ api.post("/list", (req, res) => {
     name: req.body.name,
     price: req.body.price,
     address: req.body.address,
+    userId: req.body.userId,
   });
   inventory.save().then((inventory) => console.log(inventory));
   res.send({ success: true });
